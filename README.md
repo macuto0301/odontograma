@@ -1,6 +1,7 @@
 # odontograma
 
 This template should help get you started developing with Vue 3 in Vite.
+Creando un componente de Odontograma para clinica dental
 
 ## Recommended IDE Setup
 
