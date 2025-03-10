@@ -1,7 +1,7 @@
 <template>
     <div class="odontograma-container">
       <h2>Odontograma (Sistema FDI)</h2>
-      <svg :width="svgWidth" :height="svgHeight">
+      <svg :width="svgWidth" :height="svgHeight" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
         <!-- Dibujar cada pieza dental -->
         <g v-for="pieza in piezas" :key="pieza.id">
           <!-- Grupo principal para aplicar la rotación -->
@@ -43,7 +43,17 @@
           <option value="caries">Caries</option>
           <option value="restaurada">Restaurada</option>
           <option value="extraida">Extraída</option>
+          <option value="sin_analizar">Sin Analizar</option>
         </select>
+      </div>
+  
+      <!-- Leyenda de colores -->
+      <div class="leyenda">
+        <h3>Leyenda</h3>
+        <div class="leyenda-item" v-for="(item, index) in leyendaColores" :key="index">
+          <div class="color-box" :style="{ backgroundColor: item.color }"></div>
+          <span>{{ item.label }}</span>
+        </div>
       </div>
     </div>
   </template>
@@ -56,47 +66,54 @@
         svgHeight: 600,
         piezas: [
           // Cuadrante 1: Superior Derecho (18 al 11)
-          { id: 1, numero_pieza: 18, x: 100, y: 100, secciones: Array(5).fill("sana") },
-          { id: 2, numero_pieza: 17, x: 180, y: 100, secciones: Array(5).fill("sana") },
-          { id: 3, numero_pieza: 16, x: 260, y: 100, secciones: Array(5).fill("sana") },
-          { id: 4, numero_pieza: 15, x: 340, y: 100, secciones: Array(5).fill("sana") },
-          { id: 5, numero_pieza: 14, x: 420, y: 100, secciones: Array(5).fill("sana") },
-          { id: 6, numero_pieza: 13, x: 500, y: 100, secciones: Array(5).fill("sana") },
-          { id: 7, numero_pieza: 12, x: 580, y: 100, secciones: Array(5).fill("sana") },
-          { id: 8, numero_pieza: 11, x: 660, y: 100, secciones: Array(5).fill("sana") },
+          { id: 1, numero_pieza: 18, x: 100, y: 100, secciones: Array(5).fill("sin_analizar") },
+          { id: 2, numero_pieza: 17, x: 180, y: 100, secciones: Array(5).fill("sin_analizar") },
+          { id: 3, numero_pieza: 16, x: 260, y: 100, secciones: Array(5).fill("sin_analizar") },
+          { id: 4, numero_pieza: 15, x: 340, y: 100, secciones: Array(5).fill("sin_analizar") },
+          { id: 5, numero_pieza: 14, x: 420, y: 100, secciones: Array(5).fill("sin_analizar") },
+          { id: 6, numero_pieza: 13, x: 500, y: 100, secciones: Array(5).fill("sin_analizar") },
+          { id: 7, numero_pieza: 12, x: 580, y: 100, secciones: Array(5).fill("sin_analizar") },
+          { id: 8, numero_pieza: 11, x: 660, y: 100, secciones: Array(5).fill("sin_analizar") },
   
           // Cuadrante 2: Superior Izquierdo (21 al 28)
-          { id: 9, numero_pieza: 21, x: 100, y: 200, secciones: Array(5).fill("sana") },
-          { id: 10, numero_pieza: 22, x: 180, y: 200, secciones: Array(5).fill("sana") },
-          { id: 11, numero_pieza: 23, x: 260, y: 200, secciones: Array(5).fill("sana") },
-          { id: 12, numero_pieza: 24, x: 340, y: 200, secciones: Array(5).fill("sana") },
-          { id: 13, numero_pieza: 25, x: 420, y: 200, secciones: Array(5).fill("sana") },
-          { id: 14, numero_pieza: 26, x: 500, y: 200, secciones: Array(5).fill("sana") },
-          { id: 15, numero_pieza: 27, x: 580, y: 200, secciones: Array(5).fill("sana") },
-          { id: 16, numero_pieza: 28, x: 660, y: 200, secciones: Array(5).fill("sana") },
+          { id: 9, numero_pieza: 21, x: 100, y: 200, secciones: Array(5).fill("sin_analizar") },
+          { id: 10, numero_pieza: 22, x: 180, y: 200, secciones: Array(5).fill("sin_analizar") },
+          { id: 11, numero_pieza: 23, x: 260, y: 200, secciones: Array(5).fill("sin_analizar") },
+          { id: 12, numero_pieza: 24, x: 340, y: 200, secciones: Array(5).fill("sin_analizar") },
+          { id: 13, numero_pieza: 25, x: 420, y: 200, secciones: Array(5).fill("sin_analizar") },
+          { id: 14, numero_pieza: 26, x: 500, y: 200, secciones: Array(5).fill("sin_analizar") },
+          { id: 15, numero_pieza: 27, x: 580, y: 200, secciones: Array(5).fill("sin_analizar") },
+          { id: 16, numero_pieza: 28, x: 660, y: 200, secciones: Array(5).fill("sin_analizar") },
   
           // Cuadrante 3: Inferior Izquierdo (31 al 38)
-          { id: 17, numero_pieza: 31, x: 100, y: 400, secciones: Array(5).fill("sana") },
-          { id: 18, numero_pieza: 32, x: 180, y: 400, secciones: Array(5).fill("sana") },
-          { id: 19, numero_pieza: 33, x: 260, y: 400, secciones: Array(5).fill("sana") },
-          { id: 20, numero_pieza: 34, x: 340, y: 400, secciones: Array(5).fill("sana") },
-          { id: 21, numero_pieza: 35, x: 420, y: 400, secciones: Array(5).fill("sana") },
-          { id: 22, numero_pieza: 36, x: 500, y: 400, secciones: Array(5).fill("sana") },
-          { id: 23, numero_pieza: 37, x: 580, y: 400, secciones: Array(5).fill("sana") },
-          { id: 24, numero_pieza: 38, x: 660, y: 400, secciones: Array(5).fill("sana") },
+          { id: 17, numero_pieza: 31, x: 100, y: 400, secciones: Array(5).fill("sin_analizar") },
+          { id: 18, numero_pieza: 32, x: 180, y: 400, secciones: Array(5).fill("sin_analizar") },
+          { id: 19, numero_pieza: 33, x: 260, y: 400, secciones: Array(5).fill("sin_analizar") },
+          { id: 20, numero_pieza: 34, x: 340, y: 400, secciones: Array(5).fill("sin_analizar") },
+          { id: 21, numero_pieza: 35, x: 420, y: 400, secciones: Array(5).fill("sin_analizar") },
+          { id: 22, numero_pieza: 36, x: 500, y: 400, secciones: Array(5).fill("sin_analizar") },
+          { id: 23, numero_pieza: 37, x: 580, y: 400, secciones: Array(5).fill("sin_analizar") },
+          { id: 24, numero_pieza: 38, x: 660, y: 400, secciones: Array(5).fill("sin_analizar") },
   
           // Cuadrante 4: Inferior Derecho (41 al 48)
-          { id: 25, numero_pieza: 41, x: 100, y: 500, secciones: Array(5).fill("sana") },
-          { id: 26, numero_pieza: 42, x: 180, y: 500, secciones: Array(5).fill("sana") },
-          { id: 27, numero_pieza: 43, x: 260, y: 500, secciones: Array(5).fill("sana") },
-          { id: 28, numero_pieza: 44, x: 340, y: 500, secciones: Array(5).fill("sana") },
-          { id: 29, numero_pieza: 45, x: 420, y: 500, secciones: Array(5).fill("sana") },
-          { id: 30, numero_pieza: 46, x: 500, y: 500, secciones: Array(5).fill("sana") },
-          { id: 31, numero_pieza: 47, x: 580, y: 500, secciones: Array(5).fill("sana") },
-          { id: 32, numero_pieza: 48, x: 660, y: 500, secciones: Array(5).fill("sana") }
+          { id: 25, numero_pieza: 41, x: 100, y: 500, secciones: Array(5).fill("sin_analizar") },
+          { id: 26, numero_pieza: 42, x: 180, y: 500, secciones: Array(5).fill("sin_analizar") },
+          { id: 27, numero_pieza: 43, x: 260, y: 500, secciones: Array(5).fill("sin_analizar") },
+          { id: 28, numero_pieza: 44, x: 340, y: 500, secciones: Array(5).fill("sin_analizar") },
+          { id: 29, numero_pieza: 45, x: 420, y: 500, secciones: Array(5).fill("sin_analizar") },
+          { id: 30, numero_pieza: 46, x: 500, y: 500, secciones: Array(5).fill("sin_analizar") },
+          { id: 31, numero_pieza: 47, x: 580, y: 500, secciones: Array(5).fill("sin_analizar") },
+          { id: 32, numero_pieza: 48, x: 660, y: 500, secciones: Array(5).fill("sin_analizar") }
         ],
         piezaSeleccionada: null,
-        seccionSeleccionada: null
+        seccionSeleccionada: null,
+        leyendaColores: [
+          { label: "Sana", color: "#4CAF50" },
+          { label: "Caries", color: "#FF5252" },
+          { label: "Restaurada", color: "#2196F3" },
+          { label: "Extraída", color: "#9E9E9E" },
+          { label: "Sin Analizar", color: "white" } // White
+        ]
       };
     },
     methods: {
@@ -105,7 +122,8 @@
           sana: "#4CAF50",
           caries: "#FF5252",
           restaurada: "#2196F3",
-          extraida: "#9E9E9E"
+          extraida: "#9E9E9E",
+          sin_analizar: "White" // Transparente para "Sin Analizar"
         }[estado] || "white";
       },
       seleccionarSeccion(pieza, index) {
@@ -146,6 +164,7 @@
   };
   </script>
   
+  
   <style>
   .odontograma-container {
     text-align: center;
@@ -155,6 +174,8 @@
   svg {
     border: 2px solid #e0e0e0;
     margin: 20px auto;
+    max-width: 100%;
+    height: auto;
   }
   
   .panel-edicion {
@@ -164,5 +185,64 @@
   select {
     padding: 8px;
     font-size: 16px;
+  }
+  
+  /* Media Queries para dispositivos móviles */
+  @media (max-width: 768px) {
+    svg {
+      width: 100%;
+      height: auto;
+    }
+  
+    text {
+      font-size: 10px;
+    }
+  
+    circle, line, path {
+      stroke-width: 1;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    text {
+      font-size: 8px;
+    }
+  
+    circle, line, path {
+      stroke-width: 0.8;
+    }
+  }
+  
+  /* Estilos para la leyenda */
+  .leyenda {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    font-size: 14px;
+  }
+  
+  .leyenda-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .color-box {
+    width: 20px;
+    height: 20px;
+    border: 1px solid black;
+  }
+  
+  @media (max-width: 480px) {
+    .leyenda {
+      font-size: 12px;
+    }
+  
+    .color-box {
+      width: 16px;
+      height: 16px;
+    }
   }
   </style>
