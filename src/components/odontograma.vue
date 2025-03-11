@@ -29,7 +29,7 @@
           </g>
   
           <!-- Número FDI debajo del diente (sin rotación) -->
-          <text :x="pieza.x" :y="pieza.y + 40" text-anchor="middle" font-size="12" fill="black">
+          <text :x="pieza.x" :y="pieza.y + 50" text-anchor="middle" font-size="12" fill="black">
             {{ pieza.numero_pieza }}
           </text>
         </g>
@@ -124,7 +124,7 @@
           restaurada: "#2196F3",
           extraida: "#9E9E9E",
           sin_analizar: "White" // Transparente para "Sin Analizar"
-        }[estado] || "white";
+        }[estado] || "White";
       },
       seleccionarSeccion(pieza, index) {
         this.piezaSeleccionada = pieza;
