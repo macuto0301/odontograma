@@ -169,7 +169,7 @@ export default {
           pieza.secciones = pieza.secciones.map((seccion, i) => (i === index ? estado : "sin_analizar"));
         }
       }
-      console.log("Estado guardado:", this.piezas);
+      //console.log("Estado guardado:", this.piezas);
     },
     getPath(x, y, index) {
       const r = 30; // Radio del círculo externo
