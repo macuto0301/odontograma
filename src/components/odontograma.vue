@@ -65,6 +65,7 @@
             {{ pieza.numero_pieza }}
           </text>
         </svg>
+
       </div>
       <div class="leyenda">
         <h3>Leyenda</h3>
@@ -135,14 +136,7 @@ export default {
   methods: {
     seleccionarPieza(pieza) {
       this.piezaSeleccionada = pieza;
-      // Añadir la clase 'selected' temporalmente para el efecto
-      const svgElement = document.querySelector(`svg[data-id="${pieza.id}"]`);
-      if (svgElement) {
-        svgElement.classList.add('selected');
-        setTimeout(() => {
-          svgElement.classList.remove('selected');
-        }, 300); // Duración del efecto
-      }
+      this.seccionSeleccionada = null;
     },
     getColor(pieza, estado) {
       if (pieza.secciones.includes("extraida")) {
@@ -159,15 +153,6 @@ export default {
     seleccionarSeccion(pieza, index) {
       this.piezaSeleccionada = pieza;
       this.seccionSeleccionada = index;
-
-      // Añadir la clase 'selected-section' temporalmente para el efecto
-      const pathElement = document.querySelector(`svg[data-id="${pieza.id}"] path:nth-child(${index + 1})`);
-      if (pathElement) {
-        pathElement.classList.add('selected-section');
-        setTimeout(() => {
-          pathElement.classList.remove('selected-section');
-        }, 300); // Duración del efecto
-      }
     },
     guardarEstado() {
       const pieza = this.piezaSeleccionada;
@@ -207,10 +192,10 @@ export default {
 
       // Crear el path para el cuadrante
       return `
-        M ${x} ${y}
-        L ${startX} ${startY}
-        A ${r} ${r} 0 0 1 ${endX} ${endY}
-        Z
+      M ${x} ${y}
+      L ${startX} ${startY}
+      A ${r} ${r} 0 0 1 ${endX} ${endY}
+      Z
       `;
     }
   }
@@ -392,5 +377,12 @@ path.selected-section {
     width: 16px;
     height: 16px;
   }
+}
+
+/* Cambia la dirección a columna */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  /* Cambia la dirección a columna */
 }
 </style>
