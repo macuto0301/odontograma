@@ -1,48 +1,20 @@
 <template>
   <div class="container">
-    <!-- Capa superpuesta -->
-    <div v-if="piezaSeleccionada" class="overlay" @click="cerrarPanel"></div>
-
-    <!-- Panel de edición -->
-    <div v-if="piezaSeleccionada" class="panel-edicion">
-      <h3>Editar Pieza {{ piezaSeleccionada.numero_pieza }} - Sección {{ seccionSeleccionada }}</h3>
-
-      <div class="radio-group">
-        <label v-for="estado in estadosDentales" :key="estado.value">
-          <input type="radio" :value="estado.value" v-model="piezaSeleccionada.secciones[seccionSeleccionada]"
-            @change="guardarEstado" name="estado-pieza" />
-          {{ estado.label }}
-        </label>
-      </div>
-    </div>
+    <!-- Modal de tratamiento -->
+    <TratamientoModal :visible="!!piezaSeleccionada" :pieza="piezaSeleccionada || {}" :seccion="seccionSeleccionada"
+      :estadosDentales="estadosDentales" :tratamientoExistente="obtenerTratamientoExistente()"
+      @guardar-tratamiento="guardarTratamiento" @guardar-estado="guardarEstado" @cerrar="cerrarPanel"
+      @seleccionar-seccion="seleccionarSeccion" />
 
     <div class="odontograma-container">
       <h2>Odontograma (Sistema FDI)</h2>
       <div class="odontograma-grid">
         <!-- Renderizar cada pieza -->
-        <svg v-for="pieza in piezas" :key="pieza.id" :width="svgWidth" :height="svgHeight" viewBox="0 0 100 100"
-          preserveAspectRatio="xMidYMid meet" :class="{ 'selected': isPiezaSelected(pieza) }"
-          @click="seleccionarPieza(pieza)">
-          <!-- Grupo principal con rotación -->
-          <g :transform="`rotate(45, 50, 50)`">
-            <!-- Círculo base del diente -->
-            <circle cx="50" cy="50" r="30" fill="white" stroke="black" stroke-width="2" />
-            <!-- Líneas divisorias -->
-            <line x1="20" y1="50" x2="80" y2="50" stroke="black" />
-            <line x1="50" y1="20" x2="50" y2="80" stroke="black" />
-            <!-- Círculo central en las líneas divisorias -->
-            <circle cx="50" cy="50" r="10" fill="black" />
-            <!-- Cuadrantes circulares (secciones) -->
-            <path v-for="(estado, index) in pieza.secciones" :key="index" :d="getPath(50, 50, index)"
-              :fill="getColor(pieza, estado)" stroke="black" stroke-width="1"
-              @click.stop="seleccionarSeccion(pieza, index)"
-              :class="{ 'selected-section': isSeccionSelected(pieza, index) }" />
-          </g>
-          <!-- Número FDI debajo del diente (sin rotación) -->
-          <text x="50" y="90" text-anchor="middle" font-size="12" fill="black">
-            {{ pieza.numero_pieza }}
-          </text>
-        </svg>
+        <Diente v-for="pieza in piezas" :key="pieza.id" :pieza="pieza" :width="svgWidth" :height="svgHeight"
+          :piezaSeleccionada="piezaSeleccionada" :seccionSeleccionada="seccionSeleccionada"
+          :estadosDentales="estadosDentales" @seleccionar-pieza="seleccionarPieza"
+          @seleccionar-seccion="seleccionarSeccion" />
+
       </div>
 
       <div class="leyenda">
@@ -52,18 +24,63 @@
           <span>{{ item.label }}</span>
         </div>
       </div>
+
+      <!-- Resumen de tratamientos -->
+      <div v-if="mostrarResumen" class="resumen-tratamientos">
+        <h3>Resumen de Tratamientos</h3>
+        <table class="tabla-resumen">
+          <thead>
+            <tr>
+              <th>Pieza</th>
+              <th>Sección</th>
+              <th>Estado</th>
+              <th>Tratamiento</th>
+              <th>Fecha</th>
+              <th>Profesional</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(tratamiento, index) in tratamientosFiltrados" :key="index">
+              <td>{{ tratamiento.pieza.numero_pieza }}</td>
+              <td>{{ tratamiento.seccion !== null ? tratamiento.seccion : 'Completa' }}</td>
+              <td>
+                <span class="estado-dental"
+                  :style="{ backgroundColor: getColorPorEstado(tratamiento.tratamiento.estado) }"></span>
+                {{ getEstadoLabel(tratamiento.tratamiento.estado) }}
+              </td>
+              <td>{{ getTipoTratamientoLabel(tratamiento.tratamiento.tipoTratamiento) }}</td>
+              <td>{{ formatearFecha(tratamiento.tratamiento.fecha) }}</td>
+              <td>{{ tratamiento.tratamiento.profesional }}</td>
+              <td>
+                <button class="btn-accion" @click="editarTratamiento(tratamiento)">Editar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import Diente from './Diente.vue';
+import TratamientoModal from './TratamientoModal.vue';
+
 export default {
+  name: 'Odontograma',
+  components: {
+    Diente,
+    TratamientoModal
+  },
   data() {
     return {
       svgWidth: 100,
       svgHeight: 100,
       piezaSeleccionada: null,
       seccionSeleccionada: null,
+      mostrarResumen: true,
+      tratamientos: [], // Almacena todos los tratamientos registrados
       estadosDentales: [
         { label: "Sana", value: "sana", color: "#4CAF50" },
         { label: "Caries", value: "caries", color: "#FF5252" },
@@ -71,8 +88,26 @@ export default {
         { label: "Extraída", value: "extraida", color: "#9E9E9E" },
         { label: "Sin Analizar", value: "sin_analizar", color: "white" }
       ],
+      tiposTratamiento: [
+        { label: "Seleccione un tratamiento", value: "" },
+        { label: "Limpieza", value: "limpieza" },
+        { label: "Empaste", value: "empaste" },
+        { label: "Endodoncia", value: "endodoncia" },
+        { label: "Extracción", value: "extraccion" },
+        { label: "Corona", value: "corona" },
+        { label: "Puente", value: "puente" },
+        { label: "Implante", value: "implante" },
+        { label: "Ortodoncia", value: "ortodoncia" },
+        { label: "Otro", value: "otro" }
+      ],
       piezas: this.inicializarPiezas()
     };
+  },
+  computed: {
+    tratamientosFiltrados() {
+      // Aquí podrías agregar filtros para el resumen de tratamientos
+      return this.tratamientos;
+    }
   },
   methods: {
     inicializarPiezas() {
@@ -119,67 +154,93 @@ export default {
       this.seccionSeleccionada = index;
     },
 
-    guardarEstado() {
-      const pieza = this.piezaSeleccionada;
-      const index = this.seccionSeleccionada;
-      const estado = pieza.secciones[index];
+    guardarEstado(pieza, index, estado) {
+      // Clonar pieza para mantener reactividad
+      const piezaIndex = this.piezas.findIndex(p => p.id === pieza.id);
+      if (piezaIndex !== -1) {
+        const nuevasPiezas = [...this.piezas];
+        const nuevaPieza = { ...nuevasPiezas[piezaIndex] };
+        nuevaPieza.secciones = [...nuevaPieza.secciones];
 
-      if (estado === "extraida") {
-        // Marcar todas las secciones como "Extraída"
-        pieza.secciones = Array(5).fill("extraida");
-      } else if (pieza.secciones.includes("extraida")) {
-        // Si se cambia de "Extraída" a otro estado, reiniciar las otras secciones
-        pieza.secciones = pieza.secciones.map((_, i) => (i === index ? estado : "sin_analizar"));
+        nuevaPieza.secciones[index !== null ? index : 0] = estado;
+
+        if (estado === "extraida") {
+          // Marcar todas las secciones como "Extraída"
+          nuevaPieza.secciones = Array(5).fill("extraida");
+        } else if (nuevaPieza.secciones.includes("extraida") && index !== null) {
+          // Si se cambia de "Extraída" a otro estado, reiniciar las otras secciones
+          nuevaPieza.secciones = nuevaPieza.secciones.map((_, i) => (i === index ? estado : "sin_analizar"));
+        }
+
+        nuevasPiezas[piezaIndex] = nuevaPieza;
+        this.piezas = nuevasPiezas;
+        this.piezaSeleccionada = nuevaPieza;
       }
-      console.log(this.piezas);
     },
 
-    getColor(pieza, estado) {
-      // Si alguna sección está marcada como extraída, todo el diente será gris
-      if (pieza.secciones.includes("extraida")) {
-        return "#9E9E9E"; // Gris para "Extraída"
+    guardarTratamiento(data) {
+      // Primero actualizamos el estado visual del diente
+      this.guardarEstado(data.pieza, data.seccion, data.tratamiento.estado);
+
+      // Buscar si ya existe un tratamiento para esta pieza y sección
+      const index = this.tratamientos.findIndex(t =>
+        t.pieza.id === data.pieza.id && t.seccion === data.seccion
+      );
+
+      if (index !== -1) {
+        // Actualizar tratamiento existente
+        this.tratamientos[index] = data;
+      } else {
+        // Agregar nuevo tratamiento
+        this.tratamientos.push(data);
       }
 
-      // Buscar el color en los estadosDentales
+      // Cerrar el modal
+      this.cerrarPanel();
+    },
+
+    obtenerTratamientoExistente() {
+      if (!this.piezaSeleccionada) return {};
+
+      // Buscar tratamiento existente
+      const tratamiento = this.tratamientos.find(t =>
+        t.pieza.id === this.piezaSeleccionada.id && t.seccion === this.seccionSeleccionada
+      );
+
+      return tratamiento ? tratamiento.tratamiento : {};
+    },
+
+    editarTratamiento(tratamiento) {
+      // Seleccionar la pieza y sección correspondiente
+      this.piezaSeleccionada = this.piezas.find(p => p.id === tratamiento.pieza.id);
+      this.seccionSeleccionada = tratamiento.seccion;
+    },
+
+    cerrarPanel() {
+      this.piezaSeleccionada = null;
+      this.seccionSeleccionada = null;
+    },
+
+    getColorPorEstado(estado) {
       const estadoDental = this.estadosDentales.find(item => item.value === estado);
       return estadoDental ? estadoDental.color : "white";
     },
 
-    getPath(x, y, index) {
-      const r = 30; // Radio del círculo exterior
-      const innerR = 10; // Radio del círculo interior (para el centro)
-
-      // Manejar la sección central
-      if (index === 4) {
-        return `M ${x - innerR} ${y} A ${innerR} ${innerR} 0 1 0 ${x + innerR} ${y} A ${innerR} ${innerR} 0 1 0 ${x - innerR} ${y} Z`;
-      }
-
-      // Ángulos para cada cuadrante
-      const startAngles = [0, 90, 180, 270];
-      const endAngles = [90, 180, 270, 360];
-
-      // Calcular puntos de inicio y fin
-      const startAngle = startAngles[index] * Math.PI / 180;
-      const endAngle = endAngles[index] * Math.PI / 180;
-      const startX = x + r * Math.cos(startAngle);
-      const startY = y + r * Math.sin(startAngle);
-      const endX = x + r * Math.cos(endAngle);
-      const endY = y + r * Math.sin(endAngle);
-
-      // Crear el path para el cuadrante
-      return `M ${x} ${y} L ${startX} ${startY} A ${r} ${r} 0 0 1 ${endX} ${endY} Z`;
+    getEstadoLabel(valor) {
+      const estado = this.estadosDentales.find(item => item.value === valor);
+      return estado ? estado.label : "Sin Analizar";
     },
 
-    isPiezaSelected(pieza) {
-      return this.piezaSeleccionada && this.piezaSeleccionada.id === pieza.id;
+    getTipoTratamientoLabel(valor) {
+      const tipo = this.tiposTratamiento.find(item => item.value === valor);
+      return tipo ? tipo.label : "";
     },
 
-    isSeccionSelected(pieza, index) {
-      return this.isPiezaSelected(pieza) && this.seccionSeleccionada === index;
-    },
-    cerrarPanel() {
-      this.piezaSeleccionada = null;
-      this.seccionSeleccionada = null;
+    formatearFecha(fecha) {
+      if (!fecha) return "";
+
+      const options = { year: 'numeric', month: 'short', day: 'numeric' };
+      return new Date(fecha).toLocaleDateString(undefined, options);
     }
   }
 };
@@ -188,28 +249,7 @@ export default {
 <style scoped>
 .container {
   display: flex;
-}
-
-.panel-edicion {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  border: 1px solid #ccc;
-  padding: 20px;
-  z-index: 1000;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  flex-direction: column;
 }
 
 .odontograma-container {
@@ -223,41 +263,12 @@ export default {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 10px;
-}
-
-svg {
-  border: 2px solid #e0e0e0;
-  margin: 20px auto;
-  max-width: 100%;
-  height: auto;
-  transition: transform 0.3s ease;
-}
-
-svg.selected {
-  transform: scale(1.2);
-}
-
-.radio-group {
-  display: flex;
-  flex-direction: column;
-}
-
-path {
-  transition: transform 0.3s ease;
-  transform-origin: center;
-}
-
-path:hover {
-  transform: scale(1.2);
-}
-
-path.selected-section {
-  transform: scale(1.2);
+  margin-bottom: 30px;
 }
 
 /* Estilos de la leyenda */
 .leyenda {
-  margin-top: 20px;
+  margin: 20px 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -277,10 +288,66 @@ path.selected-section {
   border: 1px solid black;
 }
 
+/* Estilos para la tabla de resumen */
+.resumen-tratamientos {
+  margin-top: 30px;
+  padding: 0 15px;
+}
+
+.tabla-resumen {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.tabla-resumen th,
+.tabla-resumen td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.tabla-resumen th {
+  background-color: #f5f5f5;
+  font-weight: 600;
+}
+
+.tabla-resumen tr:hover {
+  background-color: #f9f9f9;
+}
+
+.estado-dental {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 6px;
+  border: 1px solid #ccc;
+}
+
+.btn-accion {
+  padding: 4px 8px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.btn-accion:hover {
+  background-color: #0b7dda;
+}
+
 /* Consultas de medios */
 @media (max-width: 1024px) {
   .odontograma-grid {
     grid-template-columns: repeat(4, 1fr);
+  }
+
+  .tabla-resumen {
+    font-size: 13px;
   }
 }
 
@@ -289,39 +356,8 @@ path.selected-section {
     flex-direction: column;
   }
 
-  .panel-edicion {
-    border-right: none;
-    border-bottom: 1px solid #ccc;
-  }
-
   .odontograma-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  svg {
-    width: 100%;
-  }
-
-  text {
-    font-size: 10px;
-  }
-
-  circle,
-  line,
-  path {
-    stroke-width: 1;
-  }
-}
-
-@media (max-width: 480px) {
-  text {
-    font-size: 8px;
-  }
-
-  circle,
-  line,
-  path {
-    stroke-width: 0.8;
   }
 
   .leyenda {
@@ -331,6 +367,28 @@ path.selected-section {
   .color-box {
     width: 16px;
     height: 16px;
+  }
+
+  .tabla-resumen th,
+  .tabla-resumen td {
+    padding: 6px 8px;
+  }
+
+  .tabla-resumen {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .tabla-resumen {
+    font-size: 12px;
+  }
+
+  .btn-accion {
+    padding: 3px 6px;
+    font-size: 11px;
   }
 }
 </style>
